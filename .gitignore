@@ -1,0 +1,25 @@
+# Ignore macOS system files
+.DS_Store
+**/.DS_Store
+
+# Ignore Windows system files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Ignore Linux swap and temp files
+*~
+*.swp
+*#
+
+# Ignore logs folder completely
+logs/
+!logs/.gitkeep
+
+# Ignore any hidden or temporary files (general)
+.*.swp
+.*.swo
+*.tmp
+*.temp
+*.bak
+*.old
