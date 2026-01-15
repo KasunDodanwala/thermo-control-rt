@@ -1,0 +1,16 @@
+{
+  "tickTimeMilliSeconds": 100,
+  "runTimeSeconds": 120,
+  "simSpeed": 10,
+  "outsideTemp": 38,
+  "insideTemp": 33,
+  "coolHeaterAffectPerTick": 0.1,
+  "roomTempUpperBound": 25,
+  "roomTempLowerBound": 20,
+  "numberOfRoomPartitions": 4,
+  "tempReadingBufferCapacity": 256,
+  "threadSleepTimeMilliSeconds": 500,
+  "heatTransferCoefficient": 0.001,
+  "logFilePath": "logs/log.txt",
+  "terminalLogs": true
+}

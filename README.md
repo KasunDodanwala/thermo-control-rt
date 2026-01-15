@@ -12,12 +12,12 @@ You must have **Java JDK 17 or later** installed.
 Verify installation:
 
 ### Windows (Command Prompt or PowerShell)
-```cmd
+```powershell
 java -version
 javac -version
 ```
 ### macOS / Linux (Terminal)
-```cmd
+```bash
 java -version
 javac -version
 ```
@@ -30,8 +30,8 @@ ThermoControlRT/
 ├── src/
 │   └── com/thermo
 │           ├── app/App.java
-│           ├── core
-│           └── hardware
+│           ├── implementations
+│           └── interfaces
 ├── config.json
 └── README.md
 
@@ -45,18 +45,20 @@ All runtime log files are stored in `logs/`.
 Run this command from the **project root folder** (`ThermoControlRT`).
 
 ### Windows
-```cmd
-javac -d bin src\com\thermo\app\App.java
+```powershell
+javac -cp "lib/*" -d bin (Get-ChildItem -Recurse src -Filter *.java)
 ```
 
 ### macOS / Linux
-```cmd
-javac -d bin src/com/thermo/app/App.java
+```bash
+javac -cp "lib/*" -d bin $(find src -name "*.java")
 ```
 
 This generates:
 ```bash
 bin/com/thermo/app/App.class
+bin/com/thermo/implementations/*.class
+bin/com/thermo/interfaces/*.class
 ```
 
 ## 4. Run the Application
@@ -64,25 +66,25 @@ bin/com/thermo/app/App.class
 After compiling, run:
 
 ### Windows
-```cmd
-java -cp bin com.thermo.app.App
+```powershell
+java -cp "bin;lib/*" com.thermo.app.App
 ```
 
 ### macOS / Linux
-```cmd
-java -cp bin com.thermo.app.App
+```bash
+java -cp "bin:lib/*" com.thermo.app.App
 ```
 
 ## 5. One-Command Build and Run
 
 ### Windows (PowerShell)
-```cmd
-javac -d bin src\com\thermo\app\App.java; if ($?) { java -cp bin com.thermo.app.App }
+```powershell
+javac -cp "lib/*" -d bin (Get-ChildItem -Recurse src -Filter *.java) ; if ($?) { java -cp "bin;lib/*" com.thermo.app.App }
 ```
 
 ### macOS / Linux
-```cmd
-javac -d bin src/com/thermo/app/App.java && java -cp bin com.thermo.app.App
+```bash
+javac -cp "lib/*" -d bin $(find src -name "*.java") && java -cp "bin:lib/*" com.thermo.app.App
 ```
 
 ## 6. Notes
