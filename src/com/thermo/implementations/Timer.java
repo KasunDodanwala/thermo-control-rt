@@ -5,63 +5,60 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-
+/**
+ * Static simulation timer that controls the passage of simulated time.
+ *
+ * This class provides functionality for starting, stopping, and tracking the 
+ * simulation time. It supports a configurable tick interval and speed multiplier,
+ * and ensures thread-safe scheduling using a ScheduledExecutorService.
+ */
 public class Timer
 {
-    // <==Attributes==>
-
-    private static int threadSleepTimeMilliSeconds = 0;       // The sleep time between each simulated thread update in milliseconds
-    private static int speedMultiplier = 0;                 // Speed multiplier that affects the speed of the simulation (e.g., 0.1x, 1x, 10x)
-    private static long runTime = 0;                        // The total runtime for the simulation in milliseconds
-    private static volatile long currentTime = 0;                    // The current time of the simulation in milliseconds
-    private static boolean running = false;                 // A flag indicating whether the simulation is running or not
-    private static int tickTime = 0;
+    private static int threadSleepTimeMilliSeconds = 0;      // The sleep time between each simulated thread update in milliseconds
+    private static int speedMultiplier = 0;                  // Speed multiplier affecting simulation speed
+    private static long runTime = 0;                         // Total runtime of the simulation in milliseconds
+    private static volatile long currentTime = 0;            // Current simulation time in milliseconds
+    private static boolean running = false;                  // Flag indicating whether the timer is running
+    private static int tickTime = 0;                         // Duration of a single tick in milliseconds
     private static ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);  // Executor to manage scheduled tasks
 
-    // <==Attributes==>
-
-    // <==Constructors==>
-
-    // Private constructor to prevent instantiation of the Timer class (static class)
+    // Private constructor to prevent instantiation
     private Timer(){}
-
-    // <==Constructors==>
-
-    // <==Methods==>
 
     /**
      * Initializes the timer with the given parameters.
      *
-     * @param speedMultiplier The speed multiplier for the simulation (controls the speed).
-     * @param runTime The total runtime for the simulation in milliseconds.
+     * @param threadSleepTimeMilliSeconds Sleep time between simulated thread updates
+     * @param speedMultiplier Multiplier controlling simulation speed
+     * @param runTime Total runtime of the simulation in milliseconds
+     * @param tickTime Duration of a single tick in milliseconds
      */
     public static void Init(int threadSleepTimeMilliSeconds, int speedMultiplier, long runTime, int tickTime)
     {
-        if(!running) // Initialize only if the timer is not already running
+        if(!running)
         {
             Timer.threadSleepTimeMilliSeconds = threadSleepTimeMilliSeconds;
-            Timer.speedMultiplier = speedMultiplier <= 0 ? 10 : speedMultiplier; // Default to 10 if invalid multiplier
-            Timer.runTime = runTime; // Set the total runtime
+            Timer.speedMultiplier = speedMultiplier <= 0 ? 10 : speedMultiplier;
+            Timer.runTime = runTime;
             Timer.tickTime = tickTime;
-            currentTime = 0; // Initialize current time to zero
+            currentTime = 0;
         }
     }
 
     /**
-     * Returns the current time in milliseconds.
+     * Returns the current simulation time in milliseconds.
      *
-     * @return The current simulation time in milliseconds.
+     * @return Current simulation time
      */
     public static long GetTimeInMilliSeconds()
     {
         return currentTime;
     }
 
-
     /**
-     * Returns the current time in a formatted string (minutes and seconds).
+     * Returns the current simulation time formatted as minutes and seconds.
      *
-     * @return The formatted time as a string (e.g., "5m30s").
+     * @return Time string in "XmYs" format
      */
     public static String GetTimeInMinutesAndSeconds()
     {
@@ -69,9 +66,9 @@ public class Timer
     }
 
     /**
-     * Returns the speed multiplier that affects the simulation speed.
+     * Returns the speed multiplier of the simulation.
      *
-     * @return The speed multiplier (e.g., 1, 10).
+     * @return Current speed multiplier
      */
     public static int GetSpeedMultiplier()
     {
@@ -79,9 +76,9 @@ public class Timer
     }
 
     /**
-     * Returns the total runtime of the simulation.
+     * Returns the total runtime of the simulation in milliseconds.
      *
-     * @return The total runtime in milliseconds.
+     * @return Total runtime
      */
     public static long GetRunTime()
     {
@@ -89,37 +86,37 @@ public class Timer
     }
 
     /**
-     * Returns the remaining time for the simulation to run.
+     * Returns the remaining simulation time in milliseconds.
      *
-     * @return The remaining time in milliseconds.
+     * @return Remaining simulation time
      */
     public static long GetRemainingTime()
     {
-        return (runTime - currentTime) >= 0 ? (runTime - currentTime) : 0;
+        return Math.max(0, runTime - currentTime);
     }
 
     /**
-     * Starts the timer and begins scheduling tasks.
+     * Starts the timer, scheduling periodic ticks at intervals determined
+     * by the tickTime and speedMultiplier.
      */
     public static void Start()
     {
-        if(!running) // Prevent starting the timer if it's already running
+        if(!running)
         {
             running = true;
-            scheduler = Executors.newScheduledThreadPool(1);  // Reinitialize the scheduler
-            // Schedule the tick method to update the simulation time every {tickTime} / speedMultiplier milliseconds
+            scheduler = Executors.newScheduledThreadPool(1);
             scheduler.scheduleAtFixedRate(Timer::Tick, 0, tickTime / speedMultiplier, TimeUnit.MILLISECONDS);
         }
     }
 
     /**
-     * Stops the timer and cancels all scheduled tasks.
-     * It ensures that the scheduler shuts down properly and outputs the final car park stats.
+     * Stops the timer and cancels scheduled tasks. Ensures proper shutdown
+     * of the scheduler and handles interruptions.
      */
     public static void Stop()
     {
         if (!running)
-            return;  // Prevent multiple calls
+            return;
 
         running = false;
         scheduler.shutdown();
@@ -127,19 +124,19 @@ public class Timer
         {
             if (!scheduler.awaitTermination(2, TimeUnit.SECONDS))
             {
-                scheduler.shutdownNow(); // Shut down the scheduler
+                scheduler.shutdownNow();
             }
         }
         catch (InterruptedException e)
         {
             System.out.println(Exceptions.TIMER_STOP_INTERRUPTED);
-            Thread.currentThread().interrupt();  // Restore interrupted status
+            Thread.currentThread().interrupt();
         }
     }
 
     /**
-     * Increments the timers.
-     * Stops the timer if it reaches the run time.
+     * Advances the simulation time by one tick and stops the timer if the
+     * total runtime has been reached.
      */
     private static void Tick()
     {
@@ -149,24 +146,26 @@ public class Timer
     }
 
     /**
-     * Returns the timer's running status.
+     * Returns whether the timer is currently running.
      *
-     * @return True if running, otherwise false.
+     * @return True if running, false otherwise
      */
     public static boolean IsRunning()
     {
         return running;
     }
 
-
     /**
-     * Sleeps the calling thread for a given amount of time.
+     * Causes the calling thread to sleep for the specified duration, adjusted
+     * by the simulation speed multiplier.
+     *
+     * @param sleepTime Sleep time in milliseconds
      */
     public static void WaitFor(long sleepTime)
     {
         try
         {
-            Thread.sleep(sleepTime / Timer.GetSpeedMultiplier());
+            Thread.sleep(sleepTime / speedMultiplier);
         }
         catch (InterruptedException e)
         {
@@ -175,23 +174,21 @@ public class Timer
     }
 
     /**
-     * Waits until the timer has started before continuing.
+     * Blocks the calling thread until the timer has started.
      */
     public static void WaitTillTimerStarts()
     {
-        while(!Timer.IsRunning())
+        while(!running)
         {
             WaitFor(threadSleepTimeMilliSeconds);
         }
     }
 
     /**
-     * Wait when encountered resource access issue.
+     * Waits for the configured thread sleep time, useful for simulated thread pauses.
      */
     public static void WaitSimulatedThreadSleepTime()
     {
         WaitFor(threadSleepTimeMilliSeconds);
     }
-
-    // <==Methods==>
 }
