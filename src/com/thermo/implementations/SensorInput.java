@@ -15,6 +15,7 @@ public class SensorInput implements ISensorInput, Runnable
         this.buff = buff;
         this.threadSleepTime = threadSleepTime;
     }
+    @Override
     public void Start()
     {
         if(thread != null)
@@ -38,7 +39,6 @@ public class SensorInput implements ISensorInput, Runnable
                 {
                     reading = new SensorReading(i, temp, Timer.GetTimeInMinutesAndSeconds());    
                 }
-                ///////////////LOG///////////////////////
                 Logger.GetINSTANCE().Log(
                     "Timestamp: " + reading.Timestamp +
                     "\nSensorID: " + reading.SensorId +

@@ -1,6 +1,9 @@
 package com.thermo.implementations;
 
-public class TemperatureController implements Runnable
+import com.thermo.implementations.exceptions.Exceptions;
+import com.thermo.interfaces.ITemperatureController;
+
+public class TemperatureController implements ITemperatureController, Runnable
 {
     private Thread thread = null;
     private double tempUpperBound;
@@ -12,7 +15,7 @@ public class TemperatureController implements Runnable
         if(tempLowerBound > tempUpperBound)
             throw new IllegalArgumentException
             (
-                "Lower bound must not be greater than upper bound: " +
+                Exceptions.INVALID_TEMP_BOUNDS + ": " +
                 "lower=" + tempLowerBound + ", upper=" + tempUpperBound
             );
         this.tempLowerBound = tempLowerBound;
@@ -20,12 +23,12 @@ public class TemperatureController implements Runnable
         this.buff = buff;
     }
 
-    private double CurrentAverageTemp()
+    private Double CurrentAverageTemp()
     {
         double tempAcc = 0;
         SensorReading[] tempBuff = buff.RetrieveReadings();
         if(tempBuff == null)
-            return -999;
+            return null;
         int size = tempBuff.length;
         for(int i = 0; i < size; i++)
         {
@@ -34,9 +37,9 @@ public class TemperatureController implements Runnable
         return tempAcc / size;
     }
 
-    private void EvaluateTemperature(double temp)
+    private void EvaluateTemperature(Double temp)
     {
-        if(temp < -273)
+        if(temp == null)
             return;
         double middleTemp = (tempLowerBound + tempUpperBound) / 2;
         if(temp > tempLowerBound && temp < tempUpperBound)
@@ -59,6 +62,7 @@ public class TemperatureController implements Runnable
         }
     }
 
+    @Override
     public void Start()
     {
         if(thread != null)

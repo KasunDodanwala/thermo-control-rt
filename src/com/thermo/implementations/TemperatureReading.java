@@ -1,6 +1,8 @@
 package com.thermo.implementations;
 
-public class TemperatureReading
+import com.thermo.interfaces.ITemperatureReading;
+
+public class TemperatureReading implements ITemperatureReading
 {
     private int sensorID = 0;
     private double value = 0;
@@ -13,16 +15,19 @@ public class TemperatureReading
         this.timestamp = timestamp;
     }
 
+    @Override
     public int GetSensorID()
     {
         return sensorID;
     }
 
+    @Override
     public double GetValue()
     {
         return value;
     }
     
+    @Override
     public String GetTimestamp()
     {
         return timestamp;

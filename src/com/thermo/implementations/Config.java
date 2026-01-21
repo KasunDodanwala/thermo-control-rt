@@ -3,6 +3,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.thermo.implementations.exceptions.Exceptions;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public final class Config
@@ -33,14 +34,14 @@ public final class Config
     {
         if(INSTANCE != null)
         {
-            throw new IllegalStateException("Config already initialized");
+            throw new IllegalStateException(Exceptions.CONFIG_ALREADY_INITIALIZED);
         }
 
         synchronized(Config.class)
         {
             if(INSTANCE != null)
             {
-                throw new IllegalStateException("Config already initialized");
+                throw new IllegalStateException(Exceptions.CONFIG_ALREADY_INITIALIZED);
             }
 
             try
@@ -51,7 +52,7 @@ public final class Config
             }
             catch(Exception e)
             {
-                throw new RuntimeException("Failed to load config from " + jsonFilePath, e);
+                throw new RuntimeException(Exceptions.FILE_OPEN_FAIL + "(" + jsonFilePath + "): " + e);
             }
         }
     }
@@ -60,7 +61,7 @@ public final class Config
     {
         if(INSTANCE == null)
         {
-            throw new IllegalStateException("Config not initialized. Call Config.Init() first.");
+            throw new IllegalStateException(Exceptions.CONFIG_NOT_INITIALIZED);
         }
         return INSTANCE;
     }

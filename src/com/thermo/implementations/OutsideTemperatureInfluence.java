@@ -1,8 +1,10 @@
 package com.thermo.implementations;
 
+import com.thermo.implementations.exceptions.Exceptions;
+import com.thermo.interfaces.IOutsideTemperatureInfluence;
 import java.util.concurrent.Semaphore;
 
-public class OutsideTemperatureInfluence implements Runnable
+public class OutsideTemperatureInfluence implements IOutsideTemperatureInfluence, Runnable
 {
     private Thread thread = null;
     private double[][] temperatures = null;
@@ -13,9 +15,9 @@ public class OutsideTemperatureInfluence implements Runnable
     public OutsideTemperatureInfluence(double[][] temperatures, double outsideTemperature, double heatTransferCoefficient, Semaphore[][] mutexes)
     {
         if(temperatures == null)
-            throw new IllegalArgumentException("Temperature grid must not be null");
+            throw new IllegalArgumentException(Exceptions.TEMP_GRID_NULL);
         if(heatTransferCoefficient < 0)
-            throw new IllegalArgumentException("Heat transfer coefficient must be non-negative");
+            throw new IllegalArgumentException(Exceptions.HEAT_TRANSFER_COEFFICIENT_NULL);
 
         this.temperatures = temperatures;
         this.outsideTemperature = outsideTemperature;
@@ -23,6 +25,7 @@ public class OutsideTemperatureInfluence implements Runnable
         this.mutexes = mutexes;
     }
 
+    @Override
     public void Start()
     {
         if(thread != null)
@@ -46,7 +49,7 @@ public class OutsideTemperatureInfluence implements Runnable
             catch(InterruptedException e)
             {
                 Thread.currentThread().interrupt();
-                System.err.println("Thread interrupted while applying ambient effect: " + e.getMessage());
+                System.err.println(Exceptions.OUTSIDETEMPERATUREINFLUENCE_INTERRUPT + ": " + e.getMessage());
             }
             finally
             {

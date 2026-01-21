@@ -1,8 +1,10 @@
 package com.thermo.implementations;
 
+import com.thermo.implementations.exceptions.Exceptions;
+import com.thermo.interfaces.ICooler;
 import java.util.concurrent.Semaphore;
 
-public class Cooler implements Runnable
+public class Cooler implements ICooler, Runnable
 {
     private Thread thread = null;
     private double[][] temperatures = null;
@@ -39,7 +41,7 @@ public class Cooler implements Runnable
             catch(InterruptedException e)
             {
                 Thread.currentThread().interrupt();
-                System.err.println("Thread interrupted while applying cooling: " + e.getMessage());
+                System.err.println(Exceptions.COOLER_INTERRUPT + ": " + e.getMessage());
             }
             finally
             {
@@ -48,6 +50,7 @@ public class Cooler implements Runnable
         }
     }
 
+    @Override
     public void Start()
     {
         if(thread != null)

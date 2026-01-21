@@ -1,6 +1,6 @@
 package com.thermo.interfaces;
 
-public interface ITemperatureController
+public interface IHeater
 {
     public void Start();
 }

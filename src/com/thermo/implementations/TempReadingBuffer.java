@@ -1,9 +1,10 @@
 package com.thermo.implementations;
 
 import com.thermo.implementations.exceptions.Exceptions;
+import com.thermo.interfaces.ITempReadingBuffer;
 import java.util.concurrent.Semaphore;
 
-public class TempReadingBuffer
+public class TempReadingBuffer implements ITempReadingBuffer
 {
     private SensorReading[] queue = null;
     private int queueStart = 0;                 // Index of the first reading in the queue
@@ -33,6 +34,7 @@ public class TempReadingBuffer
 
     // <==Getters==>
 
+    @Override
     public int GetSize()
     {
         return size;
@@ -132,11 +134,13 @@ public class TempReadingBuffer
         }
     }
 
+    @Override
     public boolean HasSpace()
     {
         return size < queue.length;
     }
 
+    @Override
     public boolean IsEmpty()
     {
         return size == 0;

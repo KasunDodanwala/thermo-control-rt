@@ -1,5 +1,6 @@
 package com.thermo.implementations;
 
+import com.thermo.implementations.exceptions.Exceptions;
 import java.util.concurrent.Semaphore;
 
 public class ActuatorControl
@@ -19,14 +20,14 @@ public class ActuatorControl
     {
         if(INSTANCE != null)
         {
-            throw new IllegalStateException("ActuatorControl already initialized");
+            throw new IllegalStateException(Exceptions.ACTUATORCONTROL_ALREADY_INITIALIZED);
         }
 
         synchronized(ActuatorControl.class)
         {
             if(INSTANCE != null)
             {
-                throw new IllegalStateException("ActuatorControl already initialized");
+                throw new IllegalStateException(Exceptions.ACTUATORCONTROL_ALREADY_INITIALIZED);
             }
 
             INSTANCE = new ActuatorControl(temperatures, tempAffect, mutexes);
@@ -39,7 +40,7 @@ public class ActuatorControl
     {
         if(INSTANCE == null)
         {
-            throw new IllegalStateException("ActuatorControl not initialized. Call ActuatorControl.Init() first.");
+            throw new IllegalStateException(Exceptions.ACTUATORCONTROL_NOT_INITIALIZED);
         }
         return INSTANCE;
     }
@@ -48,32 +49,40 @@ public class ActuatorControl
     {
         state = ActuatorState.HEATING;
         heater.Enable();
-        ///////////////LOG///////////////////////
-        Logger.GetINSTANCE().Log(Timer.GetTimeInMinutesAndSeconds() + ": " + "Heater Turned On");
+        Logger.GetINSTANCE().Log(
+            "Timestamp: " + Timer.GetTimeInMinutesAndSeconds() +
+            "\nHeater Turned On\n"
+        );
     }
 
     public void TurnHeaterOff()
     {
         state = ActuatorState.OFF;
         heater.Disable();
-        ///////////////LOG///////////////////////
-        Logger.GetINSTANCE().Log(Timer.GetTimeInMinutesAndSeconds() + ": " + "Heater Turned Off");
+        Logger.GetINSTANCE().Log(
+            "Timestamp: " + Timer.GetTimeInMinutesAndSeconds() +
+            "\nHeater Turned Off\n"
+        );
     }
 
     public void TurnCoolerOn()
     {
         state = ActuatorState.COOLING;
         cooler.Enable();
-        ///////////////LOG///////////////////////
-        Logger.GetINSTANCE().Log(Timer.GetTimeInMinutesAndSeconds() + ": " + "Cooler Turned On");
+        Logger.GetINSTANCE().Log(
+            "Timestamp: " + Timer.GetTimeInMinutesAndSeconds() +
+            "\nCooler Turned On\n"
+        );
     }
 
     public void TurnCoolerOff()
     {
         state = ActuatorState.OFF;
         cooler.Disable();
-        ///////////////LOG///////////////////////
-        Logger.GetINSTANCE().Log(Timer.GetTimeInMinutesAndSeconds() + ": " + "Cooler Turned Off");
+        Logger.GetINSTANCE().Log(
+            "Timestamp: " + Timer.GetTimeInMinutesAndSeconds() +
+            "\nCooler Turned Off\n"
+        );
     }
 
     public ActuatorState GetState()

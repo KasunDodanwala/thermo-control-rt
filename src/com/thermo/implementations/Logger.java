@@ -1,5 +1,6 @@
 package com.thermo.implementations;
 
+import com.thermo.implementations.exceptions.Exceptions;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -11,7 +12,7 @@ public class Logger implements Runnable
     private Thread thread = null;
     private static volatile Logger INSTANCE = null;
 
-    private final Semaphore binarySemaphore = new Semaphore(1);
+    private final Semaphore mutex = new Semaphore(1);
     private final ArrayList<String> logBuffer = new ArrayList<>();
 
     private BufferedWriter writer;
@@ -21,12 +22,12 @@ public class Logger implements Runnable
     {
         try
         {
-            this.writer = new BufferedWriter(new FileWriter(filePath, true));
+            this.writer = new BufferedWriter(new FileWriter(filePath, false));
             this.terminalLogs = terminalLogs;
         }
         catch(IOException e)
         {
-            throw new RuntimeException("Failed to open log file");
+            throw new RuntimeException(Exceptions.FILE_OPEN_FAIL + "(" + filePath + "): " + e);
         }
     }
 
@@ -34,14 +35,14 @@ public class Logger implements Runnable
     {
         if(INSTANCE != null)
         {
-            throw new IllegalStateException("Logger already initialized");
+            throw new IllegalStateException(Exceptions.LOGGER_ALREADY_INITIALIZED);
         }
 
         synchronized(Logger.class)
         {
             if(INSTANCE != null)
             {
-                throw new IllegalStateException("Logger already initialized");
+                throw new IllegalStateException(Exceptions.LOGGER_ALREADY_INITIALIZED);
             }
 
             INSTANCE = new Logger(filePath, terminalLogs);
@@ -52,7 +53,7 @@ public class Logger implements Runnable
     {
         if(INSTANCE == null)
         {
-            throw new IllegalStateException("Logger not initialized. Call Logger.Init() first.");
+            throw new IllegalStateException(Exceptions.LOGGER_NOT_INITIALIZED);
         }
         return INSTANCE;
     }
@@ -61,7 +62,7 @@ public class Logger implements Runnable
     {
         try
         {
-            binarySemaphore.acquire();
+            mutex.acquire();
             logBuffer.add(message);
         }
         catch(InterruptedException e)
@@ -70,7 +71,7 @@ public class Logger implements Runnable
         }
         finally
         {
-            binarySemaphore.release();
+            mutex.release();
         }
     }
 
@@ -91,7 +92,7 @@ public class Logger implements Runnable
         {
             try
             {
-                binarySemaphore.acquire();
+                mutex.acquire();
 
                 if(!logBuffer.isEmpty())
                 {
@@ -114,7 +115,7 @@ public class Logger implements Runnable
             }
             finally
             {
-                binarySemaphore.release();
+                mutex.release();
             }
             Timer.WaitFor(Config.GetTickTimeMilliSeconds());
         }

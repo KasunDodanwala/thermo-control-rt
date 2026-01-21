@@ -19,11 +19,13 @@ public class Room implements  IRoom
             this.mutex = mutex;
         }
 
+        @Override
         public int GetPartitionID()
         {
             return partitionID;
         }
 
+        @Override
         public void SetPartitionID(int partitionID)
         {
             this.partitionID = partitionID;
@@ -35,31 +37,28 @@ public class Room implements  IRoom
             return temperature[0];
         }
 
+        @Override
         public void SetTemperature(double temperature)
         {
             this.temperature[0] = temperature;
         }
 
+        @Override
         public Semaphore[] GetSemaphore()
         {
             return mutex;
         }
 
+        @Override
         public void SetSemaphore(Semaphore[] mutex)
         {
             this.mutex = mutex;
         }
 
         @Override
-        public int GetRoomPartitionID() {
-            // TODO Auto-generated method stub
-            throw new UnsupportedOperationException("Unimplemented method 'GetRoomPartitionID'");
-        }
-
-        @Override
-        public void UpdateTemperature(double difference) {
-            // TODO Auto-generated method stub
-            throw new UnsupportedOperationException("Unimplemented method 'UpdateTemperature'");
+        public int GetRoomPartitionID()
+        {
+            return partitionID;
         }
         
     }
@@ -85,21 +84,25 @@ public class Room implements  IRoom
         }
     }
 
+    @Override
     public RoomPartition[] GetRoomPartitions()
     {
         return roomPartitions;
     }
 
+    @Override
     public Semaphore[][] GetMutexes()
     {
         return mutexes;
     }
 
+    @Override
     public Sensor[] GetSensors()
     {
         return sensors;
     }
 
+    @Override
     public double[][] GetTemperatures()
     {
         return temperatures;

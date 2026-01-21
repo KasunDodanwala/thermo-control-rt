@@ -1,15 +1,16 @@
 package com.thermo.implementations;
 
+import com.thermo.implementations.exceptions.Exceptions;
+import com.thermo.interfaces.IHeater;
 import java.util.concurrent.Semaphore;
 
-public class Heater implements Runnable
+public class Heater implements IHeater, Runnable
 {
     private Thread thread = null;
     private double[][] temperatures = null;
     private boolean enabled = false;
     private final double tempAffect;
     private Semaphore[][] mutexes;
-    
 
     public Heater(double[][] temperatures, double tempAffect, Semaphore[][] mutexes)
     {
@@ -40,7 +41,7 @@ public class Heater implements Runnable
             catch(InterruptedException e)
             {
                 Thread.currentThread().interrupt();
-                System.err.println("Thread interrupted while applying heating: " + e.getMessage());
+                System.err.println(Exceptions.HEATER_INTERRUPT + ": " + e.getMessage());
             }
             finally
             {
@@ -49,6 +50,7 @@ public class Heater implements Runnable
         }
     }
 
+    @Override
     public void Start()
     {
         if(thread != null)
