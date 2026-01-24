@@ -18,7 +18,7 @@ public class Timer
     private static int speedMultiplier = 0;                  // Speed multiplier affecting simulation speed
     private static long runTime = 0;                         // Total runtime of the simulation in milliseconds
     private static volatile long currentTime = 0;            // Current simulation time in milliseconds
-    private static boolean running = false;                  // Flag indicating whether the timer is running
+    private volatile static boolean running = false;         // Flag indicating whether the timer is running
     private static int tickTime = 0;                         // Duration of a single tick in milliseconds
     private static ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);  // Executor to manage scheduled tasks
 
