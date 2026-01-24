@@ -78,9 +78,11 @@ public class Cooler implements ICooler, Runnable
     {
         for(int i = 0; i < temperatures.length; i++)
         {
+            boolean acquired = false;
             try
             {
                 mutexes[i][0].acquire();
+                acquired = true;
                 temperatures[i][0] -= tempAffect;
             }
             catch(InterruptedException e)
@@ -92,7 +94,7 @@ public class Cooler implements ICooler, Runnable
             }
             finally
             {
-                mutexes[i][0].release();
+                if(acquired) mutexes[i][0].release();
             }
         }
     }

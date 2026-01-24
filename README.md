@@ -74,7 +74,7 @@ Run this command from the **project root folder** (`ThermoControlRT`).
 
 ### Windows
 ```powershell
-javac -cp "lib/*" -d bin (Get-ChildItem -Recurse src -Filter *.java)
+javac -cp "lib/*" -d bin ((Get-ChildItem -Recurse src -Filter          *.java).FullName)
 ```
 
 ### macOS / Linux
@@ -107,7 +107,7 @@ java -cp "bin:lib/*" com.thermo.app.App
 
 ### Windows (PowerShell)
 ```powershell
-javac -cp "lib/*" -d bin (Get-ChildItem -Recurse src -Filter *.java) ; if ($?) { java -cp "bin;lib/*" com.thermo.app.App }
+javac -cp "lib/*" -d bin -sourcepath src (Get-ChildItem -Recurse src -Filter          *.java | ForEach-Object { $_.FullName }) ; if ($?) { java -cp "bin;lib/*"  com.thermo.app.App }
 ```
 
 ### macOS / Linux

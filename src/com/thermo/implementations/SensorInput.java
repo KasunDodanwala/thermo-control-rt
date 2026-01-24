@@ -93,13 +93,23 @@ public class SensorInput implements ISensorInput, Runnable
                     );
                 }
 
-                Logger.GetINSTANCE().Log(
-                    "Timestamp: " + (reading.Timestamp == null ? "null" : reading.Timestamp)  +
+                if(reading != null)
+                {
+                    Logger.GetINSTANCE().Log(
+                    "Timestamp: " + reading.Timestamp +
                     "\nSensorID: " + reading.SensorId +
                     "\nTemp: " + String.format("%.2f", reading.Value) + " C\n"
-                );
-
-                buff.PushBack(reading);
+                     );
+                }
+                else
+                {
+                    Logger.GetINSTANCE().Log(
+                        "Timestamp: null\nSensorID: " + i + "\nTemp: null\n"
+                    );
+                }
+                
+                if(reading != null)
+                    buff.PushBack(reading);
             }
 
             Timer.WaitFor(threadSleepTime);

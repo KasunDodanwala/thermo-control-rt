@@ -85,19 +85,22 @@ public class OutsideTemperatureInfluence implements IOutsideTemperatureInfluence
      * The temperature of each partition is incrementally adjusted toward
      * the outside temperature based on the heat transfer coefficient.
      */
-    private void ApplyAmbientEffect()
+    private void ApplyAmbientEffect()   
     {
         for(int i = 0; i < temperatures.length; i++)
         {
+            boolean acquired = false;
+
             try
             {
                 mutexes[i][0].acquire();
+                acquired = true;
 
                 double current = temperatures[i][0];
                 double delta = heatTransferCoefficient * (outsideTemperature - current);
                 temperatures[i][0] += delta;
             }
-            catch(InterruptedException e)
+            catch (InterruptedException e)
             {
                 Thread.currentThread().interrupt();
                 System.err.println(
@@ -106,10 +109,12 @@ public class OutsideTemperatureInfluence implements IOutsideTemperatureInfluence
             }
             finally
             {
-                mutexes[i][0].release();
+                if (acquired)
+                    mutexes[i][0].release();
             }
         }
     }
+
 
     /**
      * Main execution loop for ambient temperature simulation.

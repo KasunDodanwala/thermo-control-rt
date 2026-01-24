@@ -52,9 +52,11 @@ public class TempReadingBuffer implements ITempReadingBuffer
     public SensorReading PopFront()
     {
         SensorReading removedReading = null;
+        boolean acquired = false;
         try
         {
             semaphore.acquire();
+            acquired = true;
             if(GetSize() < 1)
             {
                 return null; // Buffer empty
@@ -71,9 +73,11 @@ public class TempReadingBuffer implements ITempReadingBuffer
         catch(InterruptedException e)
         {
             System.out.println(Exceptions.SENSOR_READING_POP_FAILED + ": " + e.toString());
+            Thread.currentThread().interrupt();
         }
         finally
         {
+            if (acquired)
             semaphore.release();
         }
         return removedReading;
@@ -87,9 +91,11 @@ public class TempReadingBuffer implements ITempReadingBuffer
     public SensorReading[] RetrieveReadings()
     {
         SensorReading[] readings = null;
+        boolean acquired = false;
         try
         {
             semaphore.acquire();
+            acquired = true;
             if(GetSize() < 1)
             {
                 return null; // Buffer empty
@@ -111,10 +117,12 @@ public class TempReadingBuffer implements ITempReadingBuffer
         catch(InterruptedException e)
         {
             System.out.println(Exceptions.SENSOR_READING_POP_FAILED + ": " + e.toString());
+            Thread.currentThread().interrupt();
         }
         finally
         {
-            semaphore.release();
+            if(acquired)
+                semaphore.release();
         }
         return readings;
     }
@@ -126,9 +134,13 @@ public class TempReadingBuffer implements ITempReadingBuffer
      */
     public void PushBack(SensorReading reading)
     {
+        if(reading == null)
+            return;
+        boolean acquired = false;
         try
         {
             semaphore.acquire();
+            acquired = true;
             if(!HasSpace())
                 return; // Buffer full, cannot add
             queue[nextFreeSlot] = reading;
@@ -142,10 +154,12 @@ public class TempReadingBuffer implements ITempReadingBuffer
         catch(InterruptedException e)
         {
             System.out.println(Exceptions.SENSOR_READING_PUSH_FAILED + ": " + e.toString());
+            Thread.currentThread().interrupt();
         }
         finally
         {
-            semaphore.release();
+            if(acquired)
+                semaphore.release();
         }
     }
 

@@ -37,6 +37,9 @@ public class Sensor implements ISensor
     }
 
     /**
+     * 
+     * Always release() even if acquire() failed.
+     * 
      * Reads the current temperature value in a thread-safe manner.
      *
      * The method acquires the semaphore before accessing the shared
