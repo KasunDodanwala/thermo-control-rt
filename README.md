@@ -1,22 +1,61 @@
 # ThermoControlRT
 
-ThermoControlRT is a real-time room temperature simulation and control system written in Java.
-It models rooms with multiple partitions, sensors, and actuators (heaters and coolers), and simulates temperature changes influenced by external ambient temperature and internal heating/cooling effects.
+ThermoControlRT is a real-time, multithreaded room-temperature simulation and control system written in core Java (JDK 17+), with no external build tools (no Maven/Gradle).
 
-The application includes:   
-- Temperature sensors that periodically read and log temperatures.
-- Actuators (heaters and coolers) controlled automatically based on configurable upper and lower temperature bounds.
-- A central temperature controller that evaluates room temperature averages and turns actuators on or off.
-- An ambient temperature influence module that simulates heat transfer from the outside environment.
-- A thread-safe logging system that records readings and actuator events to file and optionally to the console.
-- Configurable runtime parameters such as simulation speed, tick intervals, number of room partitions, and initial temperatures, loaded from config.json.
-
-ThermoControlRT is implemented entirely with core Java and the JDK 17+, without any external build tools like Maven or Gradle. The system uses multithreading, semaphores for synchronization, and a simulated timer to coordinate events.
-
+A `Room` is divided into independent partitions. Each partition has its own simulated temperature cell, a sensor, and a semaphore guarding concurrent access. Background threads simulate ambient heat transfer from outside, poll sensors, feed readings into a shared buffer, and drive a heater/cooler based on configurable upper/lower temperature bounds — all coordinated by a virtual `Timer` that can run faster than real time via a speed multiplier.
 
 ---
 
-## 1. Requirements
+## 1. Architecture
+
+The simulation is composed of independent, mostly-daemon-threaded components wired together in `Simulator.Start()`:
+
+| Component | Role |
+|---|---|
+| `Config` | Loads and validates `config.json` (via Jackson) into static, simulation-wide settings. |
+| `Timer` | Static virtual clock. Ticks on a `ScheduledExecutorService` at `tickTime / simSpeed` real intervals; all other threads synchronize against it (`WaitTillTimerStarts`, `IsRunning`, `WaitFor`). |
+| `Room` / `RoomPartition` | Holds the shared `temperatures[][]` grid and the `mutexes[][]` semaphore matrix (one binary semaphore per partition), plus one `Sensor` per partition. |
+| `Sensor` | Reads a single partition's temperature under its semaphore. |
+| `SensorInput` | Background thread that polls all sensors each cycle, logs each reading, and pushes them into the shared `TempReadingBuffer`. |
+| `TempReadingBuffer` | Thread-safe circular buffer (semaphore-protected) decoupling sensor production from controller consumption. |
+| `TemperatureController` | Background thread that drains the buffer, averages readings across partitions, and turns the heater/cooler on or off via `ActuatorControl` once the average crosses `roomTempLowerBound`/`roomTempUpperBound`. |
+| `ActuatorControl` | Thread-safe singleton façade owning the `Heater` and `Cooler`, tracking the current `ActuatorState` (OFF/HEATING/COOLING), and logging state transitions. |
+| `Heater` / `Cooler` | Each runs its own background thread; while enabled, nudges every partition's temperature up/down by `coolHeaterAffectPerTick` per tick. |
+| `OutsideTemperatureInfluence` | Background thread that drifts each partition's temperature toward `outsideTemp` each tick, scaled by `heatTransferCoefficient` (simple linear heat-transfer model). |
+| `Logger` | Thread-safe, buffered, asynchronous singleton logger. Producers append to an in-memory list under a semaphore; a dedicated thread periodically flushes it to `logFilePath` and optionally echoes to the console. |
+
+### Data flow per tick
+
+1. `OutsideTemperatureInfluence` and `Heater`/`Cooler` (if enabled) each adjust the shared temperature grid, guarded by per-partition semaphores.
+2. `SensorInput` reads each partition's temperature and pushes a timestamped `SensorReading` into `TempReadingBuffer`, logging it.
+3. `TemperatureController` drains the buffer, computes the average temperature, and enables/disables the heater or cooler accordingly, logging any state change.
+4. `Logger`'s background thread periodically flushes all queued log entries to disk (and the console, if enabled).
+
+All of the above run concurrently as daemon threads and are paced by the shared `Timer`, so the whole simulation stops cleanly once `Timer` reaches `runTimeSeconds` (accelerated by `simSpeed`).
+
+---
+
+## 2. Configuration (`config.json`)
+
+| Key | Meaning |
+|---|---|
+| `tickTimeMilliSeconds` | Simulated duration of one tick, in ms. |
+| `runTimeSeconds` | Total simulated runtime before the simulation stops. |
+| `simSpeed` | Multiplier that compresses real wall-clock time relative to simulated time (higher = faster). |
+| `outsideTemp` | Ambient outside temperature (°C) that partitions drift toward. |
+| `insideTemp` | Initial temperature (°C) for all room partitions. |
+| `coolHeaterAffectPerTick` | Temperature change (°C) applied per tick while the heater/cooler is enabled. |
+| `roomTempUpperBound` / `roomTempLowerBound` | Target temperature band the controller tries to keep the room average within. |
+| `numberOfRoomPartitions` | Number of independent room partitions to simulate. |
+| `tempReadingBufferCapacity` | Capacity of the circular buffer between sensors and the controller. |
+| `threadSleepTimeMilliSeconds` | Real-time sleep interval (before `simSpeed` scaling) used by sensor polling and startup waits. |
+| `heatTransferCoefficient` | Rate coefficient controlling how fast partitions drift toward `outsideTemp`. |
+| `logFilePath` | Path to the log file (relative to the project root). |
+| `terminalLogs` | If `true`, log entries are also printed to the console. |
+
+---
+
+## 3. Requirements
 
 You must have **Java JDK 17 or later** installed.
 
@@ -33,7 +72,8 @@ java -version
 javac -version
 ```
 
-## 2. Project Structure
+## 4. Project Structure
+```
 ThermoControlRT/
 ├── bin/                            # Compiled class files and runtime dependencies
 │   ├── com/thermo/app/App.class
@@ -55,26 +95,24 @@ ThermoControlRT/
 │       └── interfaces
 │           └── *.java
 ├── config.json                     # Simulation configuration file
-├── README.md                        # Project documentation
-├── .gitignore                       # Git ignore rules
-└── .vscode/settings.json            # VS Code project settings
+├── README.md                       # Project documentation
+├── .gitignore                      # Git ignore rules
+└── .vscode/settings.json           # VS Code project settings
+```
 
 Notes:
-- src/ contains all Java source code organized by package.
-- bin/ contains compiled .class files and any required .jar libraries.
-- logs/ is used for runtime logs generated by the simulator.
-- External dependencies (Jackson JSON libraries) are in lib/.
-- .git/ and .vscode/ store project metadata and editor configuration, not part of runtime.
+- `src/` contains all Java source code organized by package (`app`, `implementations`, `implementations.exceptions`, `interfaces`).
+- `bin/` contains compiled `.class` files; the required Jackson `.jar`s live in `lib/`.
+- `logs/` is used for runtime logs generated by the simulator.
+- `.git/` and `.vscode/` store project metadata and editor configuration, not part of runtime.
 
-
-## 3. Compile the Application
-
+## 5. Compile the Application
 
 Run this command from the **project root folder** (`ThermoControlRT`).
 
 ### Windows
 ```powershell
-javac -cp "lib/*" -d bin ((Get-ChildItem -Recurse src -Filter          *.java).FullName)
+javac -cp "lib/*" -d bin ((Get-ChildItem -Recurse src -Filter *.java).FullName)
 ```
 
 ### macOS / Linux
@@ -83,13 +121,13 @@ javac -cp "lib/*" -d bin $(find src -name "*.java")
 ```
 
 This generates:
-```bash
+```
 bin/com/thermo/app/App.class
 bin/com/thermo/implementations/*.class
 bin/com/thermo/interfaces/*.class
 ```
 
-## 4. Run the Application
+## 6. Run the Application
 
 After compiling, run:
 
@@ -103,11 +141,11 @@ java -cp "bin;lib/*" com.thermo.app.App
 java -cp "bin:lib/*" com.thermo.app.App
 ```
 
-## 5. One-Command Build and Run
+## 7. One-Command Build and Run
 
 ### Windows (PowerShell)
 ```powershell
-javac -cp "lib/*" -d bin -sourcepath src (Get-ChildItem -Recurse src -Filter          *.java | ForEach-Object { $_.FullName }) ; if ($?) { java -cp "bin;lib/*"  com.thermo.app.App }
+javac -cp "lib/*" -d bin -sourcepath src (Get-ChildItem -Recurse src -Filter *.java | ForEach-Object { $_.FullName }) ; if ($?) { java -cp "bin;lib/*" com.thermo.app.App }
 ```
 
 ### macOS / Linux
@@ -115,10 +153,10 @@ javac -cp "lib/*" -d bin -sourcepath src (Get-ChildItem -Recurse src -Filter    
 javac -cp "lib/*" -d bin $(find src -name "*.java") && java -cp "bin:lib/*" com.thermo.app.App
 ```
 
-## 6. Notes
+## 8. Notes
 
-- Logs are stored in the logs/ folder at runtime.
-- The working directory for both terminal and VS Code is the project root, so relative paths like logs/abc.txt will work correctly.
-- config.json is in the project root to store system configuration.
+- Logs are stored in the `logs/` folder at runtime, at the path set by `logFilePath` in `config.json`.
+- The working directory for both terminal and VS Code is the project root, so relative paths like `logs/log.txt` resolve correctly.
+- `config.json` lives in the project root and is loaded once at startup by `Config.Init`.
 - If you are running this project in VS Code and encounter errors with the Run button, try disabling or uninstalling the Code Runner extension, as it may interfere with package-based Java projects.
-- Always ensure your .vscode/settings.json points to src as the source folder and bin as the output folder to avoid compilation or runtime errors.
+- Always ensure `.vscode/settings.json` points to `src` as the source folder and `bin` as the output folder to avoid compilation or runtime errors.
